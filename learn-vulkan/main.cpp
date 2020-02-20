@@ -47,7 +47,7 @@ private:
         vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
         puts("available extensions:");
         for (const auto& extension : extensions) {
-            std::cout << "\t" << extension.extensionName << std::endl;
+            printf("\t%s\n", extension.extensionName);
         }
 
         uint32_t glfwExtensionCount = 0;
