@@ -112,11 +112,8 @@ private:
     createInstance();
     setupDebugMessenger();
   }
-  void setupDebugMessenger() {
-    if (!enableValidationLayers) {
-      return;
-    }
-    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+  void populateDebugMessengerCreateInfo(
+      VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     createInfo.messageSeverity =
         VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
@@ -126,6 +123,15 @@ private:
                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
+  }
+  void setupDebugMessenger() {
+    if (!enableValidationLayers) {
+      return;
+    }
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
+    populateDebugMessengerCreateInfo(createInfo);
+
     createInfo.pUserData = nullptr; // not using
     if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr,
                                      &debugMessenger) != VK_SUCCESS) {
@@ -149,24 +155,32 @@ private:
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
+
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
     if (enableValidationLayers) {
       createInfo.enabledLayerCount =
           static_cast<uint32_t>(validationLayers.size());
       createInfo.ppEnabledLayerNames = validationLayers.data();
+
+      populateDebugMessengerCreateInfo(debugCreateInfo);
+      createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *)&debugCreateInfo;
     } else {
       createInfo.enabledLayerCount = 0;
+      createInfo.pNext = nullptr;
     }
 
-    // list extensions, this doesn't have anything to do with the instance
-    // creation
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> extensionsProperties(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-                                           extensionsProperties.data());
-    puts("available extensions:");
-    for (const auto &extension : extensionsProperties) {
-      printf("\t%s\n", extension.extensionName);
+    {
+      // list extensions, this doesn't have anything to do with the instance
+      // creation
+      uint32_t extensionCount = 0;
+      vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+      std::vector<VkExtensionProperties> extensionsProperties(extensionCount);
+      vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+                                             extensionsProperties.data());
+      puts("available extensions:");
+      for (const auto &extension : extensionsProperties) {
+        printf("\t%s\n", extension.extensionName);
+      }
     }
 
     auto extensions = getRequiredExtensions();
