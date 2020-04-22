@@ -108,10 +108,41 @@ private:
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
   }
+
   void initVulkan() {
     createInstance();
     setupDebugMessenger();
+    pickPhysicalDevice();
   }
+
+  void pickPhysicalDevice() {
+    uint32_t numDevices = 0;
+    vkEnumeratePhysicalDevices(instance, &numDevices, nullptr);
+    if (numDevices == 0) {
+      throw std::runtime_error("failed to find any GPUs with Vulkan support!");
+    }
+    std::vector<VkPhysicalDevice> devices(numDevices);
+    // do you always have to call these twice? so ugly...
+    vkEnumeratePhysicalDevices(instance, &numDevices, devices.data());
+    for (const auto &dev : devices) {
+      if (isDeviceSuitable(dev)) {
+        physicalDevice = dev;
+        break;
+      }
+    }
+    if (physicalDevice == VK_NULL_HANDLE) {
+      throw std::runtime_error("failed to find a suitable GPU!");
+    }
+  }
+
+  bool isDeviceSuitable(VkPhysicalDevice device) {
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+  }
+
   void populateDebugMessengerCreateInfo(
       VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
     createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -124,6 +155,7 @@ private:
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
   }
+
   void setupDebugMessenger() {
     if (!enableValidationLayers) {
       return;
@@ -138,6 +170,7 @@ private:
       throw std::runtime_error("failed to set up a debug messenger!");
     }
   }
+
   void createInstance() {
     if (enableValidationLayers && !checkValidationLayerSupport()) {
       throw std::runtime_error(
@@ -191,11 +224,13 @@ private:
       throw std::runtime_error("failed to create instance!");
     }
   }
+
   void mainLoop() {
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
     }
   }
+
   void cleanup() {
     if (enableValidationLayers) {
       DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
@@ -207,6 +242,7 @@ private:
 
   GLFWwindow *window;
   VkInstance instance;
+  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDebugUtilsMessengerEXT debugMessenger;
 };
 
