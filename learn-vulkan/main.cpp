@@ -85,38 +85,11 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance,
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;
+  std::optional<uint32_t> presentFamily;
 };
 
-QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
-  QueueFamilyIndices indices;
-
-  uint32_t queueFamilyCount = 0;
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-  std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-  vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
-                                           queueFamilies.data());
-
-  int i = 0;
-  for (const auto &queueFamily : queueFamilies) {
-    if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-      indices.graphicsFamily = i;
-      break;
-    }
-    ++i;
-  }
-
-  return indices;
-}
-
-bool isDeviceSuitable(VkPhysicalDevice device) {
-  // VkPhysicalDeviceProperties deviceProperties;
-  // vkGetPhysicalDeviceProperties(device, &deviceProperties);
-  // VkPhysicalDeviceFeatures deviceFeatures;
-  // vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-  // return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
-  QueueFamilyIndices indices = findQueueFamilies(device);
-  return indices.graphicsFamily.has_value();
+bool isComplete(QueueFamilyIndices *qfi) {
+  return qfi->graphicsFamily.has_value() && qfi->presentFamily.has_value();
 }
 
 class HelloTriangleApplication {
@@ -201,6 +174,49 @@ private:
                              VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                              VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
     createInfo.pfnUserCallback = debugCallback;
+  }
+
+  QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
+                                             nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount,
+                                             queueFamilies.data());
+
+    int i = 0;
+    for (const auto &queueFamily : queueFamilies) {
+      if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        indices.graphicsFamily = i;
+      }
+
+      VkBool32 presentSupport = false;
+      vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+      if (presentSupport) {
+        indices.presentFamily = i;
+      }
+
+      if (isComplete(&indices)) {
+        break;
+      }
+      ++i;
+    }
+
+    return indices;
+  }
+
+  bool isDeviceSuitable(VkPhysicalDevice device) {
+    // VkPhysicalDeviceProperties deviceProperties;
+    // vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    // VkPhysicalDeviceFeatures deviceFeatures;
+    // vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    // return deviceProperties.deviceType ==
+    // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
+    QueueFamilyIndices indices = findQueueFamilies(device);
+    return isComplete(&indices);
   }
 
   void pickPhysicalDevice() {
