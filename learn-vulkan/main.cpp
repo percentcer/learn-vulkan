@@ -218,6 +218,37 @@ private:
     return indices;
   }
 
+  struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
+  };
+
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportDetails det;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface,
+                                              &det.capabilities);
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+                                         nullptr);
+    if (formatCount != 0) {
+      det.formats.resize(formatCount);
+      vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount,
+                                           det.formats.data());
+    }
+
+    uint32_t modeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &modeCount,
+                                              nullptr);
+    if (modeCount != 0) {
+      det.presentModes.resize(modeCount);
+      vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &modeCount,
+                                                det.presentModes.data());
+    }
+
+    return det;
+  }
+
   bool isDeviceSuitable(VkPhysicalDevice device) {
     // VkPhysicalDeviceProperties deviceProperties;
     // vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -226,8 +257,18 @@ private:
     // return deviceProperties.deviceType ==
     // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     QueueFamilyIndices indices = findQueueFamilies(device);
+
+    // check to see if our extensions are supported
     bool allExtensionsSupported = checkDeviceExtensionSupport(device);
-    return isComplete(&indices) && allExtensionsSupported;
+
+    // check swap chain details next
+    bool swapChainOkay = false;
+    if (allExtensionsSupported) {
+      SwapChainSupportDetails det = querySwapChainSupport(device);
+      swapChainOkay = !(det.formats.empty() || det.presentModes.empty());
+    }
+
+    return isComplete(&indices) && allExtensionsSupported && swapChainOkay;
   }
 
   bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
