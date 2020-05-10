@@ -513,18 +513,24 @@ private:
     glfwTerminate();
   }
 
+  // member vars
   GLFWwindow *window;
+
   VkInstance instance;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
   VkDevice device; // (logical device)
+
   VkQueue graphicsQueue;
   VkQueue presentQueue;
+
   VkDebugUtilsMessengerEXT debugMessenger;
+
   VkSurfaceKHR surface;
+
   VkSwapchainKHR swapChain;
-  std::vector<VkImage> swapChainImages;
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
+  std::vector<VkImage> swapChainImages;
 };
 
 int main() {
