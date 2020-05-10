@@ -14,6 +14,8 @@ const int HEIGHT = 600;
 
 const std::vector<const char *> validationLayers = {
     "VK_LAYER_KHRONOS_validation"};
+const std::vector<const char *> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -224,7 +226,26 @@ private:
     // return deviceProperties.deviceType ==
     // VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
     QueueFamilyIndices indices = findQueueFamilies(device);
-    return isComplete(&indices);
+    bool allExtensionsSupported = checkDeviceExtensionSupport(device);
+    return isComplete(&indices) && allExtensionsSupported;
+  }
+
+  bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
+                                         nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount,
+                                         availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(deviceExtensions.begin(),
+                                             deviceExtensions.end());
+    for (const auto &ext : availableExtensions) {
+
+      requiredExtensions.erase(ext.extensionName);
+    }
+    return requiredExtensions.empty();
   }
 
   void pickPhysicalDevice() {
