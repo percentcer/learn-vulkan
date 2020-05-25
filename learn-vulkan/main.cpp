@@ -5,12 +5,31 @@
 #include <cstdlib>
 
 #include <algorithm>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <optional>
 #include <set>
 #include <stdexcept>
 #include <vector>
+
+// --- IO -----------------------------------------------------------------
+// ------------------------------------------------------------------------
+static std::vector<char> readFile(const std::string &fn) {
+  // todo not sure if I fully understand this
+  std::ifstream file(fn, std::ios::ate | std::ios::binary);
+  if (!file.is_open()) {
+    throw std::runtime_error("failed to open file!");
+  }
+  size_t fileSize = (size_t)file.tellg();
+  std::vector<char> buffer(fileSize);
+
+  file.seekg(0);
+  file.read(buffer.data(), fileSize);
+  file.close();
+
+  return buffer;
+}
 
 // --- Image Settings -----------------------------------------------------
 // ------------------------------------------------------------------------
@@ -306,6 +325,14 @@ private:
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createGraphicsPipeline();
+  }
+
+  void createGraphicsPipeline() {
+    auto vertShaderSPIRV = readFile("shaders_out/vert.spv");
+    printf("read vert shader (%zdb)\n", vertShaderSPIRV.size());
+    auto fragShaderSPIRV = readFile("shaders_out/frag.spv");
+    printf("read frag shader (%zdb)\n", fragShaderSPIRV.size());
   }
 
   void createDebugMessenger() {
