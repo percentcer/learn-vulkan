@@ -112,12 +112,6 @@ bool isComplete(QueueFamilyIndices *qfi) {
   return qfi->graphicsFamily.has_value() && qfi->presentFamily.has_value();
 }
 
-struct SwapChainSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
-};
-
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device,
                                      VkSurfaceKHR surface) {
   QueueFamilyIndices indices;
@@ -191,6 +185,12 @@ bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
 
 // --- SwapChain Helpers --------------------------------------------------
 // ------------------------------------------------------------------------
+
+struct SwapChainSupportDetails {
+  VkSurfaceCapabilitiesKHR capabilities;
+  std::vector<VkSurfaceFormatKHR> formats;
+  std::vector<VkPresentModeKHR> presentModes;
+};
 
 SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device,
                                               VkSurfaceKHR surface) {
