@@ -36,7 +36,7 @@ static std::vector<char> readFile(const std::string &fn) {
 const int WIDTH = 800;
 const int HEIGHT = 600;
 
-// --- ValidationLayers and DebugMessager ---------------------------------
+// --- ValidationLayers and DebugMessenger --------------------------------
 // ------------------------------------------------------------------------
 
 const std::vector<const char *> validationLayers = {
