@@ -19,7 +19,10 @@ static std::vector<char> readFile(const std::string &fn) {
   // todo not sure if I fully understand this
   std::ifstream file(fn, std::ios::ate | std::ios::binary);
   if (!file.is_open()) {
-    throw std::runtime_error("failed to open file!");
+    static constexpr size_t s = 1024;
+    char* buf = new char[s];
+    sprintf_s(buf, s, "failed to open file! (%s)", fn.c_str());
+    throw std::runtime_error(buf);
   }
   size_t fileSize = (size_t)file.tellg();
   std::vector<char> buffer(fileSize);
