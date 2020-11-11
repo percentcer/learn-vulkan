@@ -990,7 +990,7 @@ private:
     for (auto framebuffer : swapChainFramebuffers) {
       vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
-    vkFreeCommandBuffers(device, commandPool, commandBuffers.size(),
+    vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(commandBuffers.size()),
                          commandBuffers.data());
     vkDestroyPipeline(device, graphicsPipeline, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
@@ -1022,32 +1022,32 @@ private:
   }
 
   // member vars
-  GLFWwindow *window;
+  GLFWwindow *window = nullptr;
 
-  VkInstance instance;
+  VkInstance instance = VK_NULL_HANDLE;
   VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-  VkDevice device; // (logical device)
+  VkDevice device = VK_NULL_HANDLE; // (logical device)
 
-  VkQueue graphicsQueue;
-  VkQueue presentQueue;
+  VkQueue graphicsQueue = VK_NULL_HANDLE;
+  VkQueue presentQueue = VK_NULL_HANDLE;
 
-  VkDebugUtilsMessengerEXT debugMessenger;
+  VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
 
-  VkSurfaceKHR surface;
+  VkSurfaceKHR surface = VK_NULL_HANDLE;
 
-  VkSwapchainKHR swapChain;
-  VkFormat swapChainImageFormat;
-  VkExtent2D swapChainExtent;
+  VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+  VkFormat swapChainImageFormat = VK_FORMAT_UNDEFINED;
+  VkExtent2D swapChainExtent = {0, 0};
   std::vector<VkImage> swapChainImages;
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
-  VkCommandPool commandPool;
+  VkCommandPool commandPool = VK_NULL_HANDLE;
   std::vector<VkCommandBuffer> commandBuffers;
 
-  VkRenderPass renderPass;
-  VkPipelineLayout pipelineLayout;
-  VkPipeline graphicsPipeline;
+  VkRenderPass renderPass = VK_NULL_HANDLE;
+  VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+  VkPipeline graphicsPipeline = VK_NULL_HANDLE;
 
   std::vector<VkSemaphore> imageAvailableSemaphores;
   std::vector<VkSemaphore> renderFinishedSemaphores;
