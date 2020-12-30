@@ -647,8 +647,8 @@ private:
         vertShaderStageCreateInfo, fragShaderStageCreateInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+    VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = Vertex::getAttributeDescriptions();
     vertexInputInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
