@@ -479,16 +479,65 @@ private:
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
   }
 
+  void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const {
+    // todo: create a separate command pool for temporary buffer creation
+    // (like this one)
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = commandPool;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer cmdBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &cmdBuffer);
+
+    VkCommandBufferBeginInfo cmdBufferBegin{};
+    cmdBufferBegin.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    cmdBufferBegin.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(cmdBuffer, &cmdBufferBegin);
+
+    VkBufferCopy copyInfo{};
+    copyInfo.size = size;
+    copyInfo.srcOffset = 0;
+    copyInfo.dstOffset = 0;
+    vkCmdCopyBuffer(cmdBuffer, src, dst, 1, &copyInfo);
+
+    vkEndCommandBuffer(cmdBuffer);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pCommandBuffers = &cmdBuffer;
+    submitInfo.commandBufferCount = 1;
+
+    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphicsQueue);
+
+    vkFreeCommandBuffers(device, commandPool, 1, &cmdBuffer);
+  }
+
   void createVertexBuffer() {
     VkDeviceSize bufSize = sizeof(vertices[0]) * vertices.size();
-    createBuffer(bufSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMem;
+    createBuffer(bufSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
                  VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                 vertexBuffer, vertexBufferMemory);
+                 stagingBuffer, stagingBufferMem);
     void *data;
-    vkMapMemory(device, vertexBufferMemory, 0, bufSize, 0, &data);
+    vkMapMemory(device, stagingBufferMem, 0, bufSize, 0, &data);
     memcpy(data, vertices.data(), bufSize);
-    vkUnmapMemory(device, vertexBufferMemory);
+    vkUnmapMemory(device, stagingBufferMem);
+
+    createBuffer(
+        bufSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertexBuffer, vertexBufferMemory);
+
+    copyBuffer(stagingBuffer, vertexBuffer, bufSize);
+    vkDestroyBuffer(device, stagingBuffer, nullptr);
+    vkFreeMemory(device, stagingBufferMem, nullptr);
   }
 
   void createCommandBuffers() {
