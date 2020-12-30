@@ -463,7 +463,7 @@ private:
         VK_SUCCESS) {
       throw std::runtime_error("Failed to create vertex buffer!");
     };
-    // workingon
+
     VkMemoryRequirements memReq;
     vkGetBufferMemoryRequirements(device, vertexBuffer, &memReq);
     VkMemoryAllocateInfo allocInfo{};
@@ -647,8 +647,10 @@ private:
         vertShaderStageCreateInfo, fragShaderStageCreateInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    VkVertexInputBindingDescription bindingDescription = Vertex::getBindingDescription();
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions = Vertex::getAttributeDescriptions();
+    VkVertexInputBindingDescription bindingDescription =
+        Vertex::getBindingDescription();
+    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions =
+        Vertex::getAttributeDescriptions();
     vertexInputInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
