@@ -371,10 +371,12 @@ const std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 // --- Uniforms -----------------------------------------------------------
 // ------------------------------------------------------------------------
 
+// 16 byte alignment for 3,4,and mat types
+// also embedded structures round up to nearest 16 alignment
 struct UniformBufferObject {
-  glm::mat4 model;
-  glm::mat4 view;
-  glm::mat4 proj;
+  alignas(16) glm::mat4 model;
+  alignas(16) glm::mat4 view;
+  alignas(16) glm::mat4 proj;
 };
 
 // --- HelloTriangleApplication -------------------------------------------
