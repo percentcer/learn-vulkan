@@ -53,8 +53,7 @@ const int MAX_FRAMES_IN_FLIGHT = 20;
 // ------------------------------------------------------------------------
 
 const std::vector<const char *> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
+    "VK_LAYER_KHRONOS_validation"};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -648,7 +647,7 @@ private:
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
   }
 
-  void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const {
+  VkCommandBuffer beginSingleTimeCommands() const {
     // todo: create a separate command pool for temporary buffer creation
     // (like this one)
     VkCommandBufferAllocateInfo allocInfo{};
@@ -666,12 +665,10 @@ private:
 
     vkBeginCommandBuffer(cmdBuffer, &cmdBufferBegin);
 
-    VkBufferCopy copyInfo{};
-    copyInfo.size = size;
-    copyInfo.srcOffset = 0;
-    copyInfo.dstOffset = 0;
-    vkCmdCopyBuffer(cmdBuffer, src, dst, 1, &copyInfo);
+    return cmdBuffer;
+  }
 
+  void endSingleTimeCommands(VkCommandBuffer cmdBuffer) const {
     vkEndCommandBuffer(cmdBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -683,6 +680,16 @@ private:
     vkQueueWaitIdle(graphicsQueue);
 
     vkFreeCommandBuffers(device, commandPool, 1, &cmdBuffer);
+  }
+
+  void copyBuffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) const {
+    VkCommandBuffer cmdBuffer = beginSingleTimeCommands();
+    VkBufferCopy copyInfo{};
+    copyInfo.size = size;
+    copyInfo.srcOffset = 0;
+    copyInfo.dstOffset = 0;
+    vkCmdCopyBuffer(cmdBuffer, src, dst, 1, &copyInfo);
+    endSingleTimeCommands(cmdBuffer);
   }
 
   void createUniformBuffers() {
