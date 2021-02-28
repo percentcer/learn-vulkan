@@ -53,7 +53,8 @@ const int MAX_FRAMES_IN_FLIGHT = 20;
 // ------------------------------------------------------------------------
 
 const std::vector<const char *> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"};
+    "VK_LAYER_KHRONOS_validation"
+};
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
