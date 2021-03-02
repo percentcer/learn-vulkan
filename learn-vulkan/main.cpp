@@ -1548,6 +1548,7 @@ private:
 
   void cleanup() {
     cleanupSwapChain();
+    vkDestroyImageView(device, textureImageView, nullptr);
     vkDestroyImage(device, textureImage, nullptr);
     vkFreeMemory(device, textureImageMemory, nullptr);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
