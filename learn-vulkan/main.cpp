@@ -312,7 +312,8 @@ bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface) {
   VkPhysicalDeviceFeatures features{};
   vkGetPhysicalDeviceFeatures(device, &features);
 
-  return isComplete(&indices) && allExtensionsSupported && swapChainOkay && features.samplerAnisotropy;
+  return isComplete(&indices) && allExtensionsSupported && swapChainOkay &&
+         features.samplerAnisotropy;
 }
 
 // --- Memory -------------------------------------------------------------
@@ -342,6 +343,7 @@ uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter,
 struct Vertex {
   glm::vec2 pos;
   glm::vec3 color;
+  glm::vec2 texCoord;
 
   static VkVertexInputBindingDescription getBindingDescription() {
     VkVertexInputBindingDescription bindingDescription{};
@@ -351,9 +353,9 @@ struct Vertex {
     return bindingDescription;
   }
 
-  static std::array<VkVertexInputAttributeDescription, 2>
+  static std::array<VkVertexInputAttributeDescription, 3>
   getAttributeDescriptions() {
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
     attributeDescriptions[0].binding = 0;
     attributeDescriptions[0].location = 0;
@@ -365,14 +367,19 @@ struct Vertex {
     attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+    attributeDescriptions[2].binding = 0;
+    attributeDescriptions[2].location = 2;
+    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
     return attributeDescriptions;
   }
 };
 
-const std::vector<Vertex> vertices = {{{-0.5, -0.5}, {1.0f, 0.0f, 0.0f}},
-                                      {{0.5, -0.5}, {0.0f, 1.0f, 0.0f}},
-                                      {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}},
-                                      {{-0.5, 0.5}, {1.0f, 1.0f, 1.0f}}};
+const std::vector<Vertex> vertices = {{{-0.5, -0.5}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
+                                      {{0.5, -0.5}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
+                                      {{0.5, 0.5}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
+                                      {{-0.5, 0.5}, {1.0f, 1.0f, 1.0f}, {0.0f,0.0f}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
@@ -597,29 +604,48 @@ private:
       descriptorBufferInfo.offset = 0;
       descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
-      VkWriteDescriptorSet writeDescriptorSet{};
-      writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      writeDescriptorSet.dstSet = descriptorSets[i];
-      writeDescriptorSet.dstBinding = 0;
-      writeDescriptorSet.dstArrayElement = 0;
-      writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      writeDescriptorSet.descriptorCount = 1;
-      writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
-      writeDescriptorSet.pImageInfo = nullptr;
-      writeDescriptorSet.pTexelBufferView = nullptr;
-      vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+      VkDescriptorImageInfo descriptorImageInfo{};
+      descriptorImageInfo.sampler = textureSampler;
+      descriptorImageInfo.imageLayout =
+          VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      descriptorImageInfo.imageView = textureImageView;
+
+      std::array<VkWriteDescriptorSet, 2> writes{};
+      writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writes[0].dstSet = descriptorSets[i];
+      writes[0].dstBinding = 0;
+      writes[0].dstArrayElement = 0;
+      writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      writes[0].descriptorCount = 1;
+      writes[0].pBufferInfo = &descriptorBufferInfo;
+
+      writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+      writes[1].dstSet = descriptorSets[i];
+      writes[1].dstBinding = 1;
+      writes[1].dstArrayElement = 0;
+      writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      writes[1].descriptorCount = 1;
+      writes[1].pImageInfo = &descriptorImageInfo;
+
+      vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()),
+                             writes.data(), 0, nullptr);
     }
   }
 
   void createDescriptorPool() {
-    VkDescriptorPoolSize poolSize{};
-    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSize.descriptorCount = static_cast<uint32_t>(swapChainImages.size());
+
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSizes[0].descriptorCount =
+        static_cast<uint32_t>(swapChainImages.size());
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSizes[1].descriptorCount =
+        static_cast<uint32_t>(swapChainImages.size());
 
     VkDescriptorPoolCreateInfo poolCreateInfo{};
     poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolCreateInfo.poolSizeCount = 1;
-    poolCreateInfo.pPoolSizes = &poolSize;
+    poolCreateInfo.poolSizeCount = 2;
+    poolCreateInfo.pPoolSizes = poolSizes.data();
     poolCreateInfo.maxSets = static_cast<uint32_t>(swapChainImages.size());
 
     if (vkCreateDescriptorPool(device, &poolCreateInfo, nullptr,
@@ -636,10 +662,19 @@ private:
     uboBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboBinding.pImmutableSamplers = nullptr;
 
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 1;
+    samplerBinding.descriptorCount = 1;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.pImmutableSamplers = nullptr;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboBinding,
+                                                            samplerBinding};
     VkDescriptorSetLayoutCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    createInfo.bindingCount = 1;
-    createInfo.pBindings = &uboBinding;
+    createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+    createInfo.pBindings = bindings.data();
 
     if (vkCreateDescriptorSetLayout(device, &createInfo, nullptr,
                                     &descriptorSetLayout) != VK_SUCCESS) {
@@ -1097,7 +1132,7 @@ private:
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     VkVertexInputBindingDescription bindingDescription =
         Vertex::getBindingDescription();
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions =
+    std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions =
         Vertex::getAttributeDescriptions();
     vertexInputInfo.sType =
         VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -1140,8 +1175,8 @@ private:
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
     rasterizer.depthBiasClamp = 0.0f;
