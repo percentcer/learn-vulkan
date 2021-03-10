@@ -104,6 +104,10 @@
       <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;C:\glfw-3.3.2.bin.WIN64\lib-vc2017</AdditionalLibraryDirectories>
       <AdditionalDependencies>$(VULKAN_SDK)\Lib\vulkan-1.lib;C:\glfw-3.3.2.bin.WIN64\lib-vc2017\glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>$(ProjectDir)compile_shaders.bat</Command>
+      <Message>Compiling shaders...</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
