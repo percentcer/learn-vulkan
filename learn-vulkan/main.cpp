@@ -1,4 +1,4 @@
-// next time: https://vulkan-tutorial.com/Texture_mapping/Image_view_and_sampler
+// next time: https://vulkan-tutorial.com/Generating_Mipmaps
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
