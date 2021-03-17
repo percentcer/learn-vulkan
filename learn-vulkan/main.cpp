@@ -411,6 +411,10 @@ struct Vertex {
   }
 };
 
+// --- Resources ----------------------------------------------------------
+// ------------------------------------------------------------------------
+
+// Planes
 const std::vector<Vertex> vertices = {
     {{-0.5, -0.5, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
     {{0.5, -0.5, 0.0}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
@@ -423,6 +427,23 @@ const std::vector<Vertex> vertices = {
     {{-0.5, 0.5, -0.5}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
 
 const std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7};
+
+// Sponza
+const std::string SPONZA_OBJ = "models/sponza/sponza.obj";
+const std::string SPONZA_MTL = "models/sponza/sponza.mtl";
+
+// Viking
+const std::string VIKING_OBJ = "models/viking_room/viking_room.obj";
+const std::string VIKING_TEX = "models/viking_room/viking_room.png";
+
+// Stanford dragon
+const std::string DRAGON_OBJ = "models/dragon/dragon.obj";
+
+// Stanford bunny
+const std::string BUNNY_OBJ = "models/bunny/bunny.obj";
+
+// Bulldog
+const std::string BULLDOG_TEX = "textures/bulldog.png";
 
 // --- Uniforms -----------------------------------------------------------
 // ------------------------------------------------------------------------
