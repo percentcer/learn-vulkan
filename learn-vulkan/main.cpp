@@ -11,6 +11,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "stb/tiny_obj_loader.h"
+
 #include <cstdint>
 #include <cstdlib>
 
@@ -331,9 +334,8 @@ VkFormat findSupportedFormat(VkPhysicalDevice device,
                (props.optimalTilingFeatures & features) == features) {
       return format;
     }
-    throw std::runtime_error(
-        "Failed to find support for requested image format");
   }
+  throw std::runtime_error("Failed to find support for requested image format");
 }
 
 VkFormat findDepthFormat(VkPhysicalDevice device) {
