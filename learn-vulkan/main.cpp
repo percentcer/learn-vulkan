@@ -415,7 +415,7 @@ struct Vertex {
 // ------------------------------------------------------------------------
 
 // Planes
-const std::vector<Vertex> vertices = {
+const std::vector<Vertex> PLANES_VERTS = {
     {{-0.5, -0.5, 0.0}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}},
     {{0.5, -0.5, 0.0}, {0.0f, 1.0f, 0.0f}, {1.0f, 1.0f}},
     {{0.5, 0.5, 0.0}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
@@ -426,7 +426,8 @@ const std::vector<Vertex> vertices = {
     {{0.5, 0.5, -0.5}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
     {{-0.5, 0.5, -0.5}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}}};
 
-const std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7};
+const std::vector<uint16_t> PLANES_INDICES = {0, 1, 2, 0, 2, 3,
+                                              4, 5, 6, 4, 6, 7};
 
 // Sponza
 const std::string SPONZA_OBJ = "models/sponza/sponza.obj";
@@ -501,6 +502,7 @@ private:
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
+    loadModel();
     createVertexBuffer();
     createIndexBuffer();
     createUniformBuffers();
@@ -510,13 +512,41 @@ private:
     createSyncObjects();
   }
 
+  void loadModel() {
+    tinyobj::attrib_t attributes;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warning;
+    std::string error;
+    if (tinyobj::LoadObj(&attributes, &shapes, &materials, &warning, &error,
+                         VIKING_OBJ.c_str()) != true) {
+      throw std::runtime_error(warning + error);
+    }
+    for (tinyobj::shape_t &shape : shapes) {
+      for (tinyobj::index_t &index : shape.mesh.indices) {
+        Vertex vert{};
+
+        vert.pos = {attributes.vertices[index.vertex_index * 3 + 0],
+                    attributes.vertices[index.vertex_index * 3 + 1],
+                    attributes.vertices[index.vertex_index * 3 + 2]};
+        vert.texCoord = {attributes.texcoords[index.texcoord_index * 2 + 0],
+                         1.0f - attributes.texcoords[index.texcoord_index * 2 + 1]};
+        vert.color = {1.0f, 1.0f, 1.0f};
+
+        vertices.push_back(vert);
+        indices.push_back(indices.size());
+      }
+    }
+  }
+
   void createDepthResources() {
     VkFormat depthFormat = findDepthFormat(physicalDevice);
     createImage(swapChainExtent.width, swapChainExtent.height, depthFormat,
                 VK_IMAGE_TILING_OPTIMAL,
                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthMemory);
-    depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImageView =
+        createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
     transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED,
                           VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
   }
@@ -618,7 +648,7 @@ private:
 
   void createTextureImage() {
     int texWidth, texHeight, texChannels;
-    stbi_uc *pixels = stbi_load("textures/bulldog.png", &texWidth, &texHeight,
+    stbi_uc *pixels = stbi_load(VIKING_TEX.c_str(), &texWidth, &texHeight,
                                 &texChannels, STBI_rgb_alpha);
     const VkDeviceSize imageSize = texWidth * texHeight * 4;
     if (!pixels) {
@@ -1096,7 +1126,7 @@ private:
       VkDeviceSize offsets[] = {0};
       vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
       vkCmdBindIndexBuffer(commandBuffers[i], indexBuffer, 0,
-                           VK_INDEX_TYPE_UINT16);
+                           VK_INDEX_TYPE_UINT32);
       vkCmdBindDescriptorSets(commandBuffers[i],
                               VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
                               0, 1, &descriptorSets[i], 0, nullptr);
@@ -1798,6 +1828,8 @@ private:
   std::vector<VkImageView> swapChainImageViews;
   std::vector<VkFramebuffer> swapChainFramebuffers;
 
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
   VkBuffer vertexBuffer = VK_NULL_HANDLE;
   VkDeviceMemory vertexBufferMemory = VK_NULL_HANDLE;
   VkBuffer indexBuffer = VK_NULL_HANDLE;
