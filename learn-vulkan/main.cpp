@@ -7,6 +7,8 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -26,6 +28,7 @@
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 
 // --- IO -----------------------------------------------------------------
@@ -409,7 +412,25 @@ struct Vertex {
 
     return attributeDescriptions;
   }
+
+  bool operator==(const Vertex &other) const {
+    return pos == other.pos && color == other.color &&
+           texCoord == other.texCoord;
+  }
 };
+
+namespace std {
+template <> struct hash<Vertex> {
+  size_t operator()(Vertex const &vertex) const {
+    // recommendation from https://en.cppreference.com/w/cpp/utility/hash for
+    // hashing a struct
+    return (((hash<glm::vec3>()(vertex.pos) ^
+              (hash<glm::vec3>()(vertex.color) << 1)) >>
+             1) ^
+            (hash<glm::vec2>()(vertex.texCoord) << 1));
+  }
+};
+} // namespace std
 
 // --- Resources ----------------------------------------------------------
 // ------------------------------------------------------------------------
@@ -522,6 +543,7 @@ private:
                          VIKING_OBJ.c_str()) != true) {
       throw std::runtime_error(warning + error);
     }
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
     for (tinyobj::shape_t &shape : shapes) {
       for (tinyobj::index_t &index : shape.mesh.indices) {
         Vertex vert{};
@@ -529,12 +551,15 @@ private:
         vert.pos = {attributes.vertices[index.vertex_index * 3 + 0],
                     attributes.vertices[index.vertex_index * 3 + 1],
                     attributes.vertices[index.vertex_index * 3 + 2]};
-        vert.texCoord = {attributes.texcoords[index.texcoord_index * 2 + 0],
-                         1.0f - attributes.texcoords[index.texcoord_index * 2 + 1]};
+        vert.texCoord = {
+            attributes.texcoords[index.texcoord_index * 2 + 0],
+            1.0f - attributes.texcoords[index.texcoord_index * 2 + 1]};
         vert.color = {1.0f, 1.0f, 1.0f};
-
-        vertices.push_back(vert);
-        indices.push_back(indices.size());
+        if (uniqueVertices.count(vert) == 0) {
+          uniqueVertices[vert] = static_cast<uint32_t>(vertices.size());
+          vertices.push_back(vert);
+        }
+        indices.push_back(uniqueVertices[vert]);
       }
     }
   }
