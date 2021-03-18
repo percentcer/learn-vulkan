@@ -551,17 +551,22 @@ private:
         vert.pos = {attributes.vertices[index.vertex_index * 3 + 0],
                     attributes.vertices[index.vertex_index * 3 + 1],
                     attributes.vertices[index.vertex_index * 3 + 2]};
-        vert.texCoord = {
-            attributes.texcoords[index.texcoord_index * 2 + 0],
-            1.0f - attributes.texcoords[index.texcoord_index * 2 + 1]};
+
+        if (attributes.texcoords.size()) {
+          vert.texCoord = {
+              attributes.texcoords[index.texcoord_index * 2 + 0],
+              1.0f - attributes.texcoords[index.texcoord_index * 2 + 1]};
+        }
+
         vert.color = {1.0f, 1.0f, 1.0f};
+
         if (uniqueVertices.count(vert) == 0) {
           uniqueVertices[vert] = static_cast<uint32_t>(vertices.size());
           vertices.push_back(vert);
         }
         indices.push_back(uniqueVertices[vert]);
       }
-    }
+    }    
   }
 
   void createDepthResources() {
